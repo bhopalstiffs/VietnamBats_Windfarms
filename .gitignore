@@ -2,8 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-.mcmc_analysis_tools_rstan.r
-.mcmc_visualization_tools.r
+mcmc_analysis_tools_rstan.r
+mcmc_visualization_tools.r
 manuscript/
 presentation/
 stan_programs/
