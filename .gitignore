@@ -7,3 +7,5 @@ mcmc_visualization_tools.r
 manuscript/
 presentation/
 stan_programs/
+data/BatWindData(with0s).xlsx
+analysis.R

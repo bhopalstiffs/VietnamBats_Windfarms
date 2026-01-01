@@ -11,17 +11,17 @@ library(patchwork) # format figures for publication
 
 # set wd and paths --------------------------------------------------------
 
-setwd("~/VietBats")
+setwd("~/VietnamBats_Windfarms")
 options(mc.cores = parallel::detectCores())
 set_cmdstan_path("C:/Users/AHitch/.cmdstan/cmdstan-2.35.0")
 
 # load data ---------------------------------------------------------------
 
-dt <- read_csv("data/data.csv",
+dt <- read_csv("data/act_data.csv",
                col_types = cols(Date_Time =
                                   col_datetime("%m/%d/%Y %H:%M")))
 
-wind <- read_csv("data/BatWind.csv") 
+wind <- read_csv("data/wind_data.csv") 
 
 # data prep ---------------------------------------------------------------
 
@@ -222,7 +222,7 @@ model.prior <- c(
 
 # fit models --------------------------------------------------------------
 
-m.wind <- brm(data = dt1,
+m.wind <- brm(data = dat3,
               family = negbinomial(),
               act ~ 1 + scale_Wind.sp + (1 | LocationVN) + (1 | MonthYear),
               # prior = model.prior,
@@ -230,29 +230,28 @@ m.wind <- brm(data = dt1,
               control = list(adapt_delta = 0.99, max_treedepth = 15), 
               threads = threading(2))
 
-
-m1.s <- brm(data = df,
-          family = negbinomial(),
-          act ~ 1 + s(scale_Wind.sp) + (1 | LocationVN) + (1 | MonthYear),
-          iter = 1000, warmup = 250, cores = 4, chains = 2,
-          control = list(adapt_delta = 0.99, max_treedepth = 15), 
-          threads = threading(2))
-
-
-int3 <- brm(data = dt1,
+m.rain <- brm(data = dat3,
             family = negbinomial(),
             act ~ 1 + scale_Rain + (scale_Rain | Location / Month),
             prior = model.prior,
             iter = 1000, warmup = 500, cores = 4, chains = 2, backend = "cmdstanr",
             threads = threading(2))
 
-int6 <- brm(data = dt1,
-             family = negbinomial(),
-             act ~ 1 + scale_Wind.sp + scale_Rain + (1 | Location) + (1| Month) + 
-             (1 | Hour),
-             iter = 2000, warmup = 500, cores = 4, chains = 4, backend = "cmdstanr",
-             control = list(adapt_delta = 0.99, max_treedepth = 15),
-             threads = threading(2))
+m.wind.rain.temp <- brm(data = dat3,
+            family = negbinomial(),
+            act ~ 1 + scale_Wind.sp + scale_Rain + scale_Temp + (1 | Location) + (1| Month) + 
+              (1 | Hour),
+            iter = 2000, warmup = 500, cores = 4, chains = 4, backend = "cmdstanr",
+            control = list(adapt_delta = 0.99, max_treedepth = 15),
+            threads = threading(2))
+
+m.dusk.s <- brm(data = df,
+          family = negbinomial(),
+          act ~ 1 + s(scale_Wind.sp) + (1 | LocationVN) + (1 | MonthYear),
+          iter = 1000, warmup = 250, cores = 4, chains = 2,
+          control = list(adapt_delta = 0.99, max_treedepth = 15), 
+          threads = threading(2))
+
 
 # plot results ------------------------------------------------------------
 
@@ -275,7 +274,7 @@ ggsave("~/VietBats/figs/windfig.PNG", windfig, width = 6.17, height = 3.34,
 
 wind.gam <- df %>% 
   modelr::data_grid(scale_Wind.sp = seq_range(Wind.sp, n =100), LocationVN, MonthYear) %>%
-  add_epred_draws(m1.s, dpar = TRUE, category = "act") %>%
+  add_epred_draws(m.dusk.s, dpar = TRUE, category = "act") %>%
   ggplot(aes(x = scale_Wind.sp, y = .epred)) +
   stat_lineribbon(mapping = aes(y = .epred), .width = 0.95, alpha = 0.5, color = "blue") +
   scale_fill_manual(values = c("gray80")) +
@@ -294,7 +293,7 @@ ggsave("~/VietBats/figs/windgam.PNG", wind.gam, width = 6.17, height = 3.34,
 dt1 %>% 
   modelr::data_grid(scale_Rain = seq_range(Rain, n =100), Location,
                     Month) %>%
-  add_epred_draws(int3, dpar = TRUE, category = "act") %>%
+  add_epred_draws(m.rain, dpar = TRUE, category = "act") %>%
   ggplot(aes(x = scale_Rain, y = .epred)) +
   stat_lineribbon(mapping = aes(y = .epred), .width = 0.95, alpha = 0.5, color = "blue") +
   scale_fill_manual(values = c("gray80")) +
@@ -306,7 +305,7 @@ dt1 %>%
 
 dt1 %>% 
   modelr::data_grid(Temp, Location, Month) %>%
-  add_epred_draws(int4, dpar = TRUE, category = "act") %>%
+  add_epred_draws(m.wind.rain.temp, dpar = TRUE, category = "act") %>%
   ggplot(aes(x = Temp, y = .epred)) +
   stat_lineribbon(mapping = aes(y = .epred), .width = 0.95, alpha = 0.5, color = "blue") +
   scale_fill_manual(values = c("gray80")) +
