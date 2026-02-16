@@ -240,14 +240,12 @@ wind.farm.map <- ggplot() +
     )
 
 
-
-
 ggsave(
-  +   filename = "figs/map.png",
-  +   plot = wind.farm.map,                 # or last_plot()
-  +   width = 5.45,
-  +   height = 7.5,
-  +   units = "in",
-  +   dpi = 600,
-  +   bg = "white"
-  + )
+  filename = "figs/map.png",
+  plot = wind.farm.map,
+  width = 5.45,
+  height = 7.5,
+  units = "in",
+  dpi = 600,
+  bg = "white"
+  )
