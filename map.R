@@ -5,6 +5,7 @@ library(tidyverse)
 library(sf)
 library(rstac)
 library(terra)
+library(tidyterra)
 library(shadowtext)
 library(ggspatial)
 
